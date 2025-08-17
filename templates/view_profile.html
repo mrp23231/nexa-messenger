@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль @{{ user.username }} - Онлайн Мессенджер{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-avatar" onclick="viewUserProfile('{{ user.username }}')" title="Посмотреть профиль">
+            {% if user.profile_picture and user.profile_picture != 'default.jpg' %}
+                <img src="{{ url_for('static', filename='uploads/' + user.profile_picture) }}" alt="Avatar">
+            {% else %}
+                <i class="fas fa-user-circle"></i>
+            {% endif %}
+        </div>
+        <div class="profile-info">
+            <h1>{{ user.display_name }}</h1>
+            <p class="profile-username">@{{ user.username }}</p>
+            <p class="profile-email">{{ user.email }}</p>
+            <p class="profile-joined">Участник с {{ user.created_at.strftime('%d.%m.%Y') }}</p>
+            <div class="profile-status">
+                <span class="status-indicator {% if user.is_online %}online{% else %}offline{% endif %}"></span>
+                <span class="status-text">
+                    {% if user.is_online %}
+                        В сети
+                    {% else %}
+                        Последний раз: {{ user.last_seen.strftime('%d.%m.%Y в %H:%M') if user.last_seen else 'Неизвестно' }}
+                    {% endif %}
+                </span>
+            </div>
+            
+            {% if user.is_banned %}
+            <div class="profile-banned">
+                <span class="ban-badge">
+                    🚫 Заблокирован
+                    {% if user.ban_reason %}
+                        <br><small>Причина: {{ user.ban_reason }}</small>
+                    {% endif %}
+                    {% if user.ban_until %}
+                        <br><small>До: {{ user.ban_until.strftime('%d.%m.%Y в %H:%M') }}</small>
+                    {% else %}
+                        <br><small>Навсегда</small>
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+            
+            <div class="rating-section">
+                <h3>⭐ Рейтинг пользователя</h3>
+                <div class="rating-display">
+                    <div class="stars">
+                        {% for i in range(5) %}
+                            {% if i < user.rating|int %}
+                                <span class="star filled">⭐</span>
+                            {% else %}
+                                <span class="star">☆</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="rating-info">
+                        <span class="rating-value">{{ "%.1f"|format(user.rating) }}/5.0</span>
+                        <span class="rating-count">({{ user.rating_count }} оценок)</span>
+                    </div>
+                </div>
+                {% if current_user.id != user.id %}
+                    <div class="rate-user-section">
+                        <h4>Оценить пользователя</h4>
+                        <div class="rating-input">
+                            <div class="star-input">
+                                {% for i in range(1, 6) %}
+                                    <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}">
+                                    <label for="star{{ i }}" class="star-label">☆</label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <textarea id="rating-comment" placeholder="Оставьте комментарий (необязательно)..." rows="3"></textarea>
+                        <button type="button" class="btn btn-primary" onclick="submitRating({{ user.id }})">
+                            Отправить оценку
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="profile-actions">
+            {% if current_user.id != user.id %}
+            <button class="btn btn-warning" onclick="reportUser({{ user.id }}, '{{ user.username }}')">
+                🚩 Пожаловаться
+            </button>
+            {% endif %}
+            
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary">
+                <i class="fas fa-shield-alt"></i>
+                Админ-панель
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="profile-content">
+        <div class="profile-section">
+            <h3>О себе</h3>
+            <div class="profile-bio">
+                {% if user.bio %}
+                    {{ user.bio }}
+                {% else %}
+                    <em>Информация о себе не указана</em>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="profile-section">
+            <h3>Статистика</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">{{ user.created_at.strftime('%d') }}</div>
+                    <div class="stat-label">День регистрации</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ user.created_at.strftime('%m') }}</div>
+                    <div class="stat-label">Месяц регистрации</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ user.created_at.strftime('%Y') }}</div>
+                    <div class="stat-label">Год регистрации</div>
+                </div>
+            </div>
+        </div>
+        
+        {% if current_user.is_admin %}
+        <div class="profile-section admin-section">
+            <h3>🔒 Административная информация</h3>
+            <div class="admin-info">
+                <p><strong>ID пользователя:</strong> #{{ user.id }}</p>
+                <p><strong>Права:</strong> 
+                    {% if user.is_admin %}
+                        👑 Администратор
+                    {% else %}
+                        👤 Обычный пользователь
+                    {% endif %}
+                </p>
+                <p><strong>Статус:</strong> 
+                    {% if user.is_banned %}
+                        🚫 Заблокирован
+                    {% else %}
+                        ✅ Активен
+                    {% endif %}
+                </p>
+                {% if user.is_banned %}
+                <p><strong>Количество блокировок:</strong> {{ user.ban_count }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Модальное окно для создания жалобы -->
+<div class="modal" id="report-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🚩 Пожаловаться на пользователя</h3>
+            <button class="close-btn" onclick="closeReportModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="report-form">
+                <input type="hidden" id="report-user-id" value="{{ user.id }}">
+                <div class="form-group">
+                    <label>На пользователя: <strong>@{{ user.username }}</strong></label>
+                </div>
+                
+                <div class="form-group">
+                    <label for="report-reason">Причина жалобы *</label>
+                    <select id="report-reason" required>
+                        <option value="">Выберите причину</option>
+                        <option value="Спам и реклама">Спам и реклама</option>
+                        <option value="Оскорбления">Оскорбления</option>
+                        <option value="Спам">Спам</option>
+                        <option value="Неприличный контент">Неприличный контент</option>
+                        <option value="Мошенничество">Мошенничество</option>
+                        <option value="Другое">Другое</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="report-description">Описание нарушения *</label>
+                    <textarea id="report-description" rows="4" placeholder="Подробно опишите нарушение..." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="report-evidence">Доказательства (необязательно)</label>
+                    <textarea id="report-evidence" rows="3" placeholder="Ссылки на скриншоты, сообщения и т.д."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeReportModal()">Отмена</button>
+                    <button type="button" class="btn btn-warning" onclick="submitReport()">
+                        🚩 Отправить жалобу
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function reportUser(userId, username) {
+    document.getElementById('report-user-id').value = userId;
+    document.getElementById('report-modal').style.display = 'block';
+}
+
+function closeReportModal() {
+    document.getElementById('report-modal').style.display = 'none';
+}
+
+function submitReport() {
+    const userId = document.getElementById('report-user-id').value;
+    const reason = document.getElementById('report-reason').value;
+    const description = document.getElementById('report-description').value;
+    const evidence = document.getElementById('report-evidence').value;
+    
+    if (!reason || !description) {
+        alert('Пожалуйста, заполните причину и описание');
+        return;
+    }
+    
+    const reportData = {
+        reported_user_id: userId,
+        reason: reason,
+        description: description,
+        evidence: evidence
+    };
+    
+    fetch('/api/report', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Жалоба отправлена успешно! Администраторы рассмотрят её в ближайшее время.');
+            closeReportModal();
+            // Очищаем форму
+            document.getElementById('report-reason').value = '';
+            document.getElementById('report-description').value = '';
+            document.getElementById('report-evidence').value = '';
+        } else {
+            alert(data.message || 'Ошибка при отправке жалобы');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Ошибка при отправке жалобы. Попробуйте позже.');
+    });
+}
+
+function submitRating(userId) {
+    const rating = document.querySelector('input[name="rating"]:checked');
+    const comment = document.getElementById('rating-comment').value;
+    
+    if (!rating) {
+        alert('Выберите оценку от 1 до 5 звезд');
+        return;
+    }
+    
+    fetch(`/api/user/${userId}/rate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            rating: parseInt(rating.value),
+            comment: comment
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Оценка отправлена успешно!');
+            // Обновляем отображение рейтинга
+            location.reload();
+        } else {
+            alert(data.message || 'Ошибка при отправке оценки');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Ошибка при отправке оценки');
+    });
+}
+
+// Инициализация звездочек рейтинга
+document.addEventListener('DOMContentLoaded', function() {
+    const starLabels = document.querySelectorAll('.star-label');
+    
+    starLabels.forEach((label, index) => {
+        label.addEventListener('mouseenter', function() {
+            // Подсвечиваем звездочки до текущей
+            for (let i = 0; i <= index; i++) {
+                starLabels[i].textContent = '⭐';
+            }
+        });
+        
+        label.addEventListener('mouseleave', function() {
+            // Возвращаем пустые звездочки
+            starLabels.forEach(star => {
+                star.textContent = '☆';
+            });
+        });
+        
+        label.addEventListener('click', function() {
+            // Выбираем звездочку
+            const radio = document.getElementById(`star${index + 1}`);
+            radio.checked = true;
+            
+            // Подсвечиваем выбранные звездочки
+            starLabels.forEach((star, i) => {
+                if (i <= index) {
+                    star.textContent = '⭐';
+                } else {
+                    star.textContent = '☆';
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

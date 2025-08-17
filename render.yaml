@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: nexa-messenger
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --worker-class eventlet --workers 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.18
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: 0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nexa-messenger-db
+          property: connectionString
+
+databases:
+  - name: nexa-messenger-db
+    databaseName: nexamessenger
+    user: nexamessenger
+    plan: free

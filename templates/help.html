@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}Помощь - Nexa Messenger{% endblock %}
+
+{% block content %}
+<div class="help-container">
+    <div class="help-header">
+        <h1><i class="fas fa-question-circle"></i> Центр помощи Nexa</h1>
+        <p>Найдите ответы на все вопросы по использованию мессенджера</p>
+    </div>
+
+    <div class="help-content">
+        <!-- Быстрый старт -->
+        <div class="help-section">
+            <h2><i class="fas fa-rocket"></i> Быстрый старт</h2>
+            
+            <div class="help-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Регистрация</h3>
+                    <p>Создайте аккаунт, указав уникальное имя пользователя и email. Система автоматически предложит альтернативы, если имя занято.</p>
+                </div>
+            </div>
+            
+            <div class="help-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Вход в систему</h3>
+                    <p>Войдите в свой аккаунт, используя имя пользователя и пароль.</p>
+                </div>
+            </div>
+            
+            <div class="help-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Поиск пользователей</h3>
+                    <p>Используйте поиск для нахождения других пользователей по имени или юзернейму.</p>
+                </div>
+            </div>
+            
+            <div class="help-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>Начало чата</h3>
+                    <p>Выберите пользователя из списка и начните переписку в реальном времени.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Безопасность -->
+        <div class="help-section">
+            <h2><i class="fas fa-shield-alt"></i> Безопасность и конфиденциальность</h2>
+            
+            <div class="security-features">
+                <div class="security-item">
+                    <div class="security-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div class="security-text">
+                        <h4>Шифрование сообщений</h4>
+                        <p>Все сообщения автоматически шифруются с использованием современных алгоритмов криптографии. Даже администраторы не могут прочитать ваши переписки.</p>
+                    </div>
+                </div>
+                
+                <div class="security-item">
+                    <div class="security-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="security-text">
+                        <h4>Приватность профиля</h4>
+                        <p>Настройте уровень приватности: публичный, только для друзей или полностью приватный профиль.</p>
+                    </div>
+                </div>
+                
+                <div class="security-item">
+                    <div class="security-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="security-text">
+                        <h4>Защищенное хранение</h4>
+                        <p>Все данные хранятся в зашифрованном виде на защищенных серверах.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="security-note">
+                <div class="note-icon">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="note-content">
+                    <h4>Важно знать</h4>
+                    <p>Nexa Messenger использует end-to-end шифрование для всех сообщений. Это означает, что только отправитель и получатель могут прочитать содержимое переписки.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Функции чата -->
+        <div class="help-section">
+            <h2><i class="fas fa-comments"></i> Функции чата</h2>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h4>Умный поиск</h4>
+                    <p>Быстро находите пользователей по имени, юзернейму или части имени.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-keyboard"></i>
+                    </div>
+                    <h4>Индикатор печати</h4>
+                    <p>Видите когда собеседник набирает сообщение в реальном времени.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h4>Уведомления</h4>
+                    <p>Получайте мгновенные уведомления о новых сообщениях.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h4>Адаптивность</h4>
+                    <p>Автоматически адаптируется под размер экрана вашего устройства.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Настройки -->
+        <div class="help-section">
+            <h2><i class="fas fa-cog"></i> Настройки и персонализация</h2>
+            
+            <div class="settings-overview">
+                <div class="setting-category">
+                    <h4><i class="fas fa-palette"></i> Внешний вид</h4>
+                    <ul>
+                        <li>Светлая и тёмная темы</li>
+                        <li>Автоматическое определение системной темы</li>
+                        <li>Выбор языка интерфейса</li>
+                    </ul>
+                </div>
+                
+                <div class="setting-category">
+                    <h4><i class="fas fa-bell"></i> Уведомления</h4>
+                    <ul>
+                        <li>Включение/отключение уведомлений</li>
+                        <li>Звуковые уведомления</li>
+                        <li>Настройка уровня приватности</li>
+                    </ul>
+                </div>
+                
+                <div class="setting-category">
+                    <h4><i class="fas fa-tools"></i> Дополнительно</h4>
+                    <ul>
+                        <li>Автосохранение черновиков</li>
+                        <li>Настройки приватности профиля</li>
+                        <li>Персональные предпочтения</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правила приложения -->
+        <div class="help-section">
+            <h2><i class="fas fa-gavel"></i> Правила приложения</h2>
+            
+            <div class="rules-overview">
+                <div class="rules-card">
+                    <div class="rules-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h4>Общие правила</h4>
+                    <p>Основные принципы поведения в приложении для комфортного общения всех пользователей.</p>
+                    <a href="{{ url_for('rules_page') }}" class="btn btn-primary">
+                        <i class="fas fa-book"></i> Читать правила
+                    </a>
+                </div>
+                
+                <div class="rules-card">
+                    <div class="rules-icon">
+                        <i class="fas fa-flag"></i>
+                    </div>
+                    <h4>Система жалоб</h4>
+                    <p>Как правильно пожаловаться на нарушителя и что происходит после подачи жалобы.</p>
+                    <a href="{{ url_for('rules_page') }}#reporting" class="btn btn-secondary">
+                        <i class="fas fa-info"></i> Узнать больше
+                    </a>
+                </div>
+                
+                <div class="rules-card">
+                    <div class="rules-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h4>Наказания</h4>
+                    <p>Система предупреждений и блокировок за нарушение правил приложения.</p>
+                    <a href="{{ url_for('rules_page') }}#punishments" class="btn btn-warning">
+                        <i class="fas fa-shield-alt"></i> Детали
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Часто задаваемые вопросы -->
+        <div class="help-section">
+            <h2><i class="fas fa-question"></i> Часто задаваемые вопросы</h2>
+            
+            <div class="faq-list">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h4>Как изменить тему оформления?</h4>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Перейдите в Настройки → Внешний вид → Тема оформления и выберите нужную тему.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h4>Можно ли отключить уведомления?</h4>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Да, в Настройках → Уведомления можно полностью отключить уведомления или настроить их по своему усмотрению.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h4>Как защищены мои сообщения?</h4>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Все сообщения автоматически шифруются с использованием алгоритма AES-256. Никто кроме вас и получателя не может прочитать содержимое.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h4>Работает ли мессенджер на мобильных устройствах?</h4>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Да! Nexa Messenger автоматически определяет тип устройства и адаптирует интерфейс для оптимального использования на компьютерах, планшетах и смартфонах.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Поддержка -->
+        <div class="help-section">
+            <h2><i class="fas fa-headset"></i> Нужна дополнительная помощь?</h2>
+            
+            <div class="support-options">
+                <div class="support-card">
+                    <div class="support-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <h4>Документация</h4>
+                    <p>Подробные инструкции по всем функциям мессенджера.</p>
+                </div>
+                
+                <div class="support-card">
+                    <div class="support-icon">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <h4>Настройки</h4>
+                    <p>Персонализируйте мессенджер под свои предпочтения.</p>
+                    <a href="{{ url_for('settings') }}" class="btn btn-primary">Перейти к настройкам</a>
+                </div>
+                
+                <div class="support-card">
+                    <div class="support-icon">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <h4>Вернуться к чату</h4>
+                    <p>Продолжить общение с друзьями.</p>
+                    <a href="{{ url_for('chat') }}" class="btn btn-secondary">Вернуться к чату</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка FAQ
+    const faqItems = document.querySelectorAll('.faq-item');
+    
+    faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        const answer = item.querySelector('.faq-answer');
+        const icon = item.querySelector('.fa-chevron-down');
+        
+        question.addEventListener('click', function() {
+            const isOpen = answer.style.display === 'block';
+            
+            // Закрываем все ответы
+            faqItems.forEach(otherItem => {
+                const otherAnswer = otherItem.querySelector('.faq-answer');
+                const otherIcon = otherItem.querySelector('.fa-chevron-down');
+                otherAnswer.style.display = 'none';
+                otherIcon.style.transform = 'rotate(0deg)';
+            });
+            
+            // Открываем текущий ответ
+            if (!isOpen) {
+                answer.style.display = 'block';
+                icon.style.transform = 'rotate(180deg)';
+            }
+        });
+    });
+    
+    // Плавная прокрутка к разделам
+    const helpLinks = document.querySelectorAll('.help-section h2');
+    helpLinks.forEach(link => {
+        link.style.cursor = 'pointer';
+        link.addEventListener('click', function() {
+            this.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль - Онлайн Мессенджер{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="profile-info">
+            <h1>{{ current_user.display_name }}</h1>
+            <p class="profile-username">@{{ current_user.username }}</p>
+            <p class="profile-email">{{ current_user.email }}</p>
+            <p class="profile-joined">Участник с {{ current_user.created_at.strftime('%d.%m.%Y') }}</p>
+            <div class="profile-status">
+                <span class="status-indicator {% if current_user.is_online %}online{% else %}offline{% endif %}"></span>
+                <span class="status-text">
+                    {% if current_user.is_online %}
+                        В сети
+                    {% else %}
+                        Последний раз: {{ current_user.last_seen.strftime('%d.%m.%Y в %H:%M') }}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        <div class="profile-actions">
+            <a href="{{ url_for('edit_profile') }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i>
+                Редактировать профиль
+            </a>
+        </div>
+    </div>
+    
+    <div class="profile-content">
+        <div class="profile-section">
+            <h3>О себе</h3>
+            <div class="profile-bio">
+                {% if current_user.bio %}
+                    {{ current_user.bio }}
+                {% else %}
+                    <em>Информация о себе не указана</em>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="profile-section">
+            <h3>Статистика</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">{{ current_user.created_at.strftime('%d') }}</div>
+                    <div class="stat-label">День регистрации</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ current_user.created_at.strftime('%m') }}</div>
+                    <div class="stat-label">Месяц регистрации</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ current_user.created_at.strftime('%Y') }}</div>
+                    <div class="stat-label">Год регистрации</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

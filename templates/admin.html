@@ -1,0 +1,845 @@
+{% extends "base.html" %}
+
+{% block title %}Админ-панель - Nexa Messenger{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1><i class="fas fa-shield-alt"></i> Админ-панель</h1>
+        <p>Управление пользователями и мониторинг системы</p>
+    </div>
+
+    <!-- Статистика -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ total_users }}</div>
+                <div class="stat-label">Всего пользователей</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon online">
+                <i class="fas fa-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ online_users }}</div>
+                <div class="stat-label">Онлайн</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-hashtag"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ total_channels }}</div>
+                <div class="stat-label">Каналов</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ total_messages }}</div>
+                <div class="stat-label">Сообщений</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon banned">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ banned_users }}</div>
+                <div class="stat-label">Заблокировано</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon reports">
+                <i class="fas fa-flag"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ pending_reports }}</div>
+                <div class="stat-label">Жалоб</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Графики -->
+    <div class="charts-section">
+        <div class="chart-container">
+            <h3><i class="fas fa-chart-line"></i> Статистика за 30 дней</h3>
+            <canvas id="statsChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Последние пользователи -->
+    <div class="recent-section">
+        <h3><i class="fas fa-user-plus"></i> Последние регистрации</h3>
+        <div class="users-grid">
+            {% for user in recent_users %}
+            <div class="user-card">
+                <div class="user-avatar">
+                    {% if user.profile_picture and user.profile_picture != 'default.jpg' %}
+                        <img src="{{ url_for('static', filename='uploads/' + user.profile_picture) }}" alt="Avatar">
+                    {% else %}
+                        <i class="fas fa-user"></i>
+                    {% endif %}
+                    <span class="status-indicator {% if user.is_online %}online{% else %}offline{% endif %}"></span>
+                </div>
+                <div class="user-info">
+                    <div class="user-name">{{ user.display_name }}</div>
+                    <div class="user-username">@{{ user.username }}</div>
+                    <div class="user-email">{{ user.email }}</div>
+                    <div class="user-joined">Зарегистрирован: {{ user.created_at.strftime('%d.%m.%Y') }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Активные каналы -->
+    <div class="channels-section">
+        <h3><i class="fas fa-fire"></i> Самые активные каналы</h3>
+        <div class="channels-grid">
+            {% for channel in active_channels %}
+            <div class="channel-card">
+                <div class="channel-header">
+                    <div class="channel-icon">
+                        <i class="fas fa-hashtag"></i>
+                    </div>
+                    <div class="channel-info">
+                        <h4>{{ channel.name }}</h4>
+                        <p>{{ channel.description }}</p>
+                        <div class="channel-meta">
+                            <span class="member-count">
+                                <i class="fas fa-users"></i> {{ channel.member_count }} участников
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Последние жалобы -->
+    <div class="reports-section">
+        <h3><i class="fas fa-flag"></i> Последние жалобы</h3>
+        <div class="reports-grid">
+            {% for report in recent_reports %}
+            <div class="report-card">
+                <div class="report-header">
+                    <div class="report-status {{ report.status }}">
+                        <i class="fas fa-flag"></i>
+                        {{ report.status }}
+                    </div>
+                    <div class="report-time">{{ report.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+                </div>
+                <div class="report-content">
+                    <div class="report-users">
+                        <span class="reporter">От: @{{ report.reporter.username }}</span>
+                        <span class="arrow">→</span>
+                        <span class="reported">На: @{{ report.reported_user.username }}</span>
+                    </div>
+                    <div class="report-reason">
+                        <strong>Причина:</strong> {{ report.reason }}
+                    </div>
+                    {% if report.description %}
+                    <div class="report-description">
+                        <strong>Описание:</strong> {{ report.description }}
+                    </div>
+                    {% endif %}
+                    {% if report.evidence %}
+                    <div class="report-evidence">
+                        <strong>Доказательства:</strong> {{ report.evidence }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="report-actions">
+                    <button class="btn btn-sm btn-primary" onclick="viewReport({{ report.id }})">
+                        <i class="fas fa-eye"></i> Просмотр
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="reports-actions">
+            <a href="/admin/reports" class="btn btn-primary">
+                <i class="fas fa-list"></i> Все жалобы
+            </a>
+        </div>
+    </div>
+
+    <!-- Управление пользователями -->
+    <div class="users-management-section">
+        <h3><i class="fas fa-cogs"></i> Управление пользователями</h3>
+        
+        <div class="search-controls">
+            <div class="search-input-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="user-search" placeholder="Поиск пользователей..." class="search-input">
+            </div>
+            <button class="btn btn-primary" onclick="loadUsers()">
+                <i class="fas fa-search"></i> Найти
+            </button>
+        </div>
+        
+        <div class="users-table-container">
+            <table class="users-table" id="users-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Аватар</th>
+                        <th>Имя</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Статус</th>
+                        <th>Онлайн</th>
+                        <th>Админ</th>
+                        <th>Блокировка</th>
+                        <th>Дата регистрации</th>
+                        <th>Действия</th>
+                        <th>Жалобы</th>
+                    </tr>
+                </thead>
+                <tbody id="users-tbody">
+                    <!-- Пользователи будут загружены через JavaScript -->
+                </tbody>
+            </table>
+            
+            <div class="pagination" id="pagination">
+                <!-- Пагинация будет загружена через JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для просмотра пользователя -->
+<div class="modal" id="user-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Информация о пользователе</h3>
+            <button class="close-btn" onclick="closeUserModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="user-modal-body">
+            <!-- Информация о пользователе -->
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для создания жалобы -->
+<div class="modal" id="report-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🚩 Пожаловаться на пользователя</h3>
+            <button class="close-btn" onclick="closeReportModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="report-form">
+                <input type="hidden" id="report-user-id">
+                <div class="form-group">
+                    <label>На пользователя: <strong id="report-username"></strong></label>
+                </div>
+                
+                <div class="form-group">
+                    <label for="report-reason">Причина жалобы *</label>
+                    <select id="report-reason" required>
+                        <option value="">Выберите причину</option>
+                        <option value="Спам и реклама">Спам и реклама</option>
+                        <option value="Оскорбления">Оскорбления</option>
+                        <option value="Спам">Спам</option>
+                        <option value="Неприличный контент">Неприличный контент</option>
+                        <option value="Мошенничество">Мошенничество</option>
+                        <option value="Другое">Другое</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="report-description">Описание нарушения *</label>
+                    <textarea id="report-description" rows="4" placeholder="Подробно опишите нарушение..." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="report-evidence">Доказательства (необязательно)</label>
+                    <textarea id="report-evidence" rows="3" placeholder="Ссылки на скриншоты, сообщения и т.д."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeReportModal()">Отмена</button>
+                    <button type="button" class="btn btn-warning" onclick="submitReport()">
+                        🚩 Отправить жалобу
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для предупреждений -->
+<div class="modal" id="warn-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⚠️ Выдать предупреждение</h3>
+            <button class="close-btn" onclick="closeWarnModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="warn-form">
+                <input type="hidden" id="warn-user-id">
+                <div class="form-group">
+                    <label>Пользователь: <strong id="warn-username"></strong></label>
+                </div>
+                <div class="form-group">
+                    <label for="warn-reason">Причина предупреждения *</label>
+                    <textarea id="warn-reason" rows="4" placeholder="Укажите причину предупреждения..." required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeWarnModal()">Отмена</button>
+                    <button type="button" class="btn btn-warning" onclick="submitWarn()">
+                        ⚠️ Выдать предупреждение
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для блокировки -->
+<div class="modal" id="ban-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🔒 Заблокировать пользователя</h3>
+            <button class="close-btn" onclick="closeBanModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="ban-form">
+                <input type="hidden" id="ban-user-id">
+                <div class="form-group">
+                    <label>Пользователь: <strong id="ban-username"></strong></label>
+                </div>
+                <div class="form-group">
+                    <label for="ban-duration">Длительность блокировки *</label>
+                    <select id="ban-duration" required>
+                        <option value="60">1 час</option>
+                        <option value="1440">1 день</option>
+                        <option value="10080">1 неделя</option>
+                        <option value="43200">1 месяц</option>
+                        <option value="216000">5 месяцев</option>
+                        <option value="0">Навсегда</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ban-reason">Причина блокировки *</label>
+                    <textarea id="ban-reason" rows="4" placeholder="Укажите причину блокировки..." required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeBanModal()">Отмена</button>
+                    <button type="button" class="btn btn-danger" onclick="submitBan()">
+                        🔒 Заблокировать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let currentPage = 1;
+let totalPages = 1;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Загружаем статистику
+    loadStatistics();
+    
+    // Загружаем пользователей
+    loadUsers();
+    
+    // Инициализируем график
+    initChart();
+});
+
+function loadStatistics() {
+    fetch('/admin/statistics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'error') {
+                showError(data.message);
+                return;
+            }
+            
+            updateChart(data);
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки статистики:', error);
+        });
+}
+
+function loadUsers(page = 1) {
+    const search = document.getElementById('user-search').value;
+    
+    fetch(`/admin/users?page=${page}&search=${encodeURIComponent(search)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'error') {
+                showError(data.message);
+                return;
+            }
+            
+            displayUsers(data.users);
+            updatePagination(data.current_page, data.pages, data.total);
+            currentPage = data.current_page;
+            totalPages = data.pages;
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки пользователей:', error);
+        });
+}
+
+function displayUsers(users) {
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = '';
+    
+    users.forEach(user => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>#${user.id}</strong></td>
+            <td>
+                <div class="user-avatar-small" onclick="viewUserProfile('${user.username}')" title="Посмотреть профиль">
+                    ${user.profile_picture && user.profile_picture !== 'default.jpg' 
+                        ? `<img src="/static/uploads/${user.profile_picture}" alt="Avatar">` 
+                        : '<i class="fas fa-user"></i>'}
+                    <span class="status-indicator ${user.is_online ? 'online' : 'offline'}"></span>
+                </div>
+            </td>
+            <td>${user.display_name}</td>
+            <td>@${user.username}</td>
+            <td>${user.email}</td>
+            <td>
+                <span class="status-badge ${user.status}">
+                    ${getStatusText(user.status)} ${user.custom_status ? `(${user.custom_status})` : ''}
+                </span>
+            </td>
+            <td>
+                <span class="online-indicator ${user.is_online ? 'online' : 'offline'}">
+                    ${user.is_online ? '🟢' : '⚫'}
+                </span>
+            </td>
+            <td>
+                <span class="admin-badge ${user.is_admin ? 'admin' : 'user'}">
+                    ${user.is_admin ? '👑 Админ' : '👤 Пользователь'}
+                </span>
+            </td>
+            <td>
+                ${user.is_banned ? 
+                    `<span class="ban-badge">
+                        🚫 Заблокирован<br>
+                        <small>${user.ban_reason}</small>
+                        ${user.ban_until ? `<br><small>До: ${user.ban_until}</small>` : '<br><small>Навсегда</small>'}
+                    </span>` : 
+                    '<span class="status-ok">✅ Активен</span>'
+                }
+            </td>
+            <td>${user.created_at}</td>
+            <td>
+                <button class="btn btn-sm btn-secondary" onclick="viewUser(${user.id})">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="toggleAdmin(${user.id})">
+                    <i class="fas fa-shield-alt"></i>
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="warnUser(${user.id}, '${user.username}')" title="Выдать предупреждение">
+                    ⚠️
+                </button>
+                ${user.is_banned ? 
+                    `<button class="btn btn-sm btn-success" onclick="unbanUser(${user.id})">
+                        <i class="fas fa-unlock"></i>
+                    </button>` : 
+                    `<button class="btn btn-sm btn-danger" onclick="banUser(${user.id})">
+                        <i class="fas fa-ban"></i>
+                    </button>`
+                }
+                <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-warning" onclick="reportUser(${user.id}, '${user.username}')">
+                    🚩 Пожаловаться
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updatePagination(currentPage, totalPages, totalUsers) {
+    const pagination = document.getElementById('pagination');
+    
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+    
+    let html = '<div class="pagination-info">';
+    html += `Показано ${((currentPage - 1) * 20) + 1}-${Math.min(currentPage * 20, totalUsers)} из ${totalUsers}`;
+    html += '</div>';
+    
+    html += '<div class="pagination-controls">';
+    
+    if (currentPage > 1) {
+        html += `<button class="btn btn-sm" onclick="loadUsers(${currentPage - 1})">← Предыдущая</button>`;
+    }
+    
+    for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+        html += `<button class="btn btn-sm ${i === currentPage ? 'btn-primary' : ''}" onclick="loadUsers(${i})">${i}</button>`;
+    }
+    
+    if (currentPage < totalPages) {
+        html += `<button class="btn btn-sm" onclick="loadUsers(${currentPage + 1})">Следующая →</button>`;
+    }
+    
+    html += '</div>';
+    pagination.innerHTML = html;
+}
+
+function getStatusText(status) {
+    const statusMap = {
+        'online': '🟢 В сети',
+        'away': '🟡 Отошел',
+        'busy': '🔴 Занят',
+        'dnd': '🚫 Не беспокоить'
+    };
+    return statusMap[status] || status;
+}
+
+function viewUser(userId) {
+    // Здесь можно добавить загрузку детальной информации о пользователе
+    showInfo('Функция просмотра пользователя в разработке');
+}
+
+function toggleAdmin(userId) {
+    if (confirm('Изменить права администратора для этого пользователя?')) {
+        fetch(`/api/user/${userId}/toggle_admin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showInfo(data.message);
+                loadUsers(currentPage); // Перезагружаем список
+            } else {
+                showError(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showError('Ошибка при изменении прав');
+        });
+    }
+}
+
+function banUser(userId) {
+    const reason = prompt('Причина блокировки:');
+    if (!reason) return;
+    
+    const duration = prompt('Длительность в минутах (0 = навсегда):');
+    if (duration === null) return;
+    
+    const durationNum = parseInt(duration) || 0;
+    
+    fetch(`/api/user/${userId}/ban`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            reason: reason,
+            duration: durationNum
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showInfo(data.message);
+            loadUsers(currentPage);
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        showError('Ошибка при блокировке');
+    });
+}
+
+function unbanUser(userId) {
+    if (confirm('Разблокировать пользователя?')) {
+        fetch(`/api/user/${userId}/unban`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showInfo(data.message);
+                loadUsers(currentPage);
+            } else {
+                showError(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showError('Ошибка при разблокировке');
+        });
+    }
+}
+
+function deleteUser(userId) {
+    if (confirm('УДАЛИТЬ пользователя? Это действие нельзя отменить!')) {
+        fetch(`/api/user/${userId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showInfo(data.message);
+                loadUsers(currentPage);
+            } else {
+                showError(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showError('Ошибка при удалении');
+        });
+    }
+}
+
+function viewReport(reportId) {
+    // Здесь можно добавить просмотр жалобы
+    showInfo('Функция просмотра жалобы в разработке');
+}
+
+function initChart() {
+    const ctx = document.getElementById('statsChart').getContext('2d');
+    window.statsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Новые пользователи',
+                data: [],
+                borderColor: '#00d4ff',
+                backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Сообщения',
+                data: [],
+                borderColor: '#ff6b9d',
+                backgroundColor: 'rgba(255, 107, 157, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function updateChart(data) {
+    if (window.statsChart) {
+        window.statsChart.data.labels = data.dates;
+        window.statsChart.data.datasets[0].data = data.user_counts;
+        window.statsChart.data.datasets[1].data = data.message_counts;
+        window.statsChart.update();
+    }
+}
+
+function closeUserModal() {
+    document.getElementById('user-modal').style.display = 'none';
+}
+
+function reportUser(userId, username) {
+    document.getElementById('report-user-id').value = userId;
+    document.getElementById('report-username').textContent = username;
+    document.getElementById('report-modal').style.display = 'block';
+}
+
+function viewUserProfile(username) {
+    window.open(`/profile/${username}`, '_blank');
+}
+
+function closeReportModal() {
+    document.getElementById('report-modal').style.display = 'none';
+}
+
+function warnUser(userId, username) {
+    document.getElementById('warn-user-id').value = userId;
+    document.getElementById('warn-username').textContent = username;
+    document.getElementById('warn-modal').style.display = 'block';
+}
+
+function closeWarnModal() {
+    document.getElementById('warn-modal').style.display = 'none';
+}
+
+function banUser(userId, username) {
+    document.getElementById('ban-user-id').value = userId;
+    document.getElementById('ban-username').textContent = username;
+    document.getElementById('ban-modal').style.display = 'block';
+}
+
+function closeBanModal() {
+    document.getElementById('ban-modal').style.display = 'none';
+}
+
+function submitReport() {
+    const userId = document.getElementById('report-user-id').value;
+    const reason = document.getElementById('report-reason').value;
+    const description = document.getElementById('report-description').value;
+    const evidence = document.getElementById('report-evidence').value;
+    
+    if (!reason || !description) {
+        showError('Пожалуйста, заполните причину и описание');
+        return;
+    }
+    
+    const reportData = {
+        reported_user_id: userId,
+        reason: reason,
+        description: description,
+        evidence: evidence
+    };
+    
+    fetch('/api/report', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showInfo('Жалоба отправлена успешно!');
+            closeReportModal();
+            // Очищаем форму
+            document.getElementById('report-reason').value = '';
+            document.getElementById('report-description').value = '';
+            document.getElementById('report-evidence').value = '';
+        } else {
+            showError(data.message || 'Ошибка при отправке жалобы');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        showError('Ошибка при отправке жалобы');
+    });
+}
+
+function submitWarn() {
+    const userId = document.getElementById('warn-user-id').value;
+    const reason = document.getElementById('warn-reason').value;
+    
+    if (!reason) {
+        showError('Укажите причину предупреждения');
+        return;
+    }
+    
+    fetch(`/api/user/${userId}/warn`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            reason: reason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showSuccess(data.message);
+            closeWarnModal();
+            loadUsers(currentPage); // Обновляем список пользователей
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        showError('Произошла ошибка при выдаче предупреждения');
+    });
+}
+
+function submitBan() {
+    const userId = document.getElementById('ban-user-id').value;
+    const duration = parseInt(document.getElementById('ban-duration').value);
+    const reason = document.getElementById('ban-reason').value;
+    
+    if (!reason) {
+        showError('Укажите причину блокировки');
+        return;
+    }
+    
+    fetch(`/api/user/${userId}/ban`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            reason: reason,
+            duration: duration
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showSuccess(data.message);
+            closeBanModal();
+            loadUsers(currentPage); // Обновляем список пользователей
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        showError('Произошла ошибка при блокировке пользователя');
+        });
+}
+
+// Поиск при нажатии Enter
+document.getElementById('user-search').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        loadUsers(1);
+    }
+});
+</script>
+{% endblock %}

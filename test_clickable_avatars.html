@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест кликабельных аватаров</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            background: #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 10px;
+        }
+        .user-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        .user-avatar:active {
+            transform: scale(0.95);
+        }
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .user-info {
+            margin-left: 15px;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тест кликабельных аватаров</h1>
+    
+    <div class="test-section">
+        <h2>📱 Список пользователей (как в чате)</h2>
+        <div class="user-item">
+            <div class="user-avatar" onclick="viewUserProfile('alice')" title="Посмотреть профиль alice">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="user-info">
+                <div><strong>alice</strong> - В сети</div>
+                <small>Нажмите на аватар для просмотра профиля</small>
+            </div>
+        </div>
+        
+        <div class="user-item">
+            <div class="user-avatar" onclick="viewUserProfile('bob')" title="Посмотреть профиль bob">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="user-info">
+                <div><strong>bob</strong> - Не в сети</div>
+                <small>Нажмите на аватар для просмотра профиля</small>
+            </div>
+        </div>
+        
+        <div class="user-item">
+            <div class="user-avatar" onclick="viewUserProfile('charlie')" title="Посмотреть профиль charlie">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="user-info">
+                <div><strong>charlie</strong> - В сети</div>
+                <small>Нажмите на аватар для просмотра профиля</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔧 Админ-панель (маленькие аватары)</h2>
+        <div class="user-item">
+            <div class="user-avatar" style="width: 40px; height: 40px; font-size: 1rem;" onclick="viewUserProfile('admin')" title="Посмотреть профиль admin">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="user-info">
+                <div><strong>admin</strong> - Администратор</div>
+                <small>Нажмите на аватар для просмотра профиля</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 Профиль пользователя</h2>
+        <div style="text-align: center;">
+            <div class="user-avatar" style="width: 100px; height: 100px; font-size: 3rem; margin: 0 auto;" onclick="viewUserProfile('testuser')" title="Посмотреть профиль testuser">
+                <i class="fas fa-user"></i>
+            </div>
+            <h3>testuser</h3>
+            <p>Нажмите на аватар для просмотра профиля</p>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🧪 Тестирование функций</h2>
+        <button class="btn" onclick="testViewProfile('alice')">Тест профиля alice</button>
+        <button class="btn" onclick="testViewProfile('bob')">Тест профиля bob</button>
+        <button class="btn" onclick="testViewProfile('charlie')">Тест профиля charlie</button>
+        <button class="btn" onclick="testViewProfile('admin')">Тест профиля admin</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>📋 Инструкции</h2>
+        <ol>
+            <li><strong>Клик по аватару:</strong> Нажмите на любой аватар пользователя</li>
+            <li><strong>Открытие профиля:</strong> Профиль откроется в новой вкладке</li>
+            <li><strong>Визуальные эффекты:</strong> Аватар увеличивается при наведении</li>
+            <li><strong>Курсор:</strong> Меняется на pointer при наведении</li>
+        </ol>
+    </div>
+
+    <script>
+        // Функция для просмотра профиля пользователя
+        function viewUserProfile(username) {
+            if (username) {
+                console.log(`Открываю профиль пользователя: ${username}`);
+                // В реальном приложении здесь будет переход на /profile/${username}
+                alert(`Открываю профиль пользователя: ${username}\n\nВ реальном приложении профиль откроется в новой вкладке.`);
+            }
+        }
+        
+        // Тестовая функция
+        function testViewProfile(username) {
+            viewUserProfile(username);
+        }
+        
+        // Добавляем Font Awesome
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
+        document.head.appendChild(link);
+    </script>
+</body>
+</html>

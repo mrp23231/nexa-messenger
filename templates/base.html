@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if current_user.is_authenticated %}
+    <meta name="current-user" content="{{ current_user.username }}">
+    {% endif %}
+    <title>{% block title %}Nexa Messenger{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="device-{{ device_type or 'desktop' }}">
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-comments"></i>
+                <span>Nexa</span>
+            </div>
+            {% if current_user.is_authenticated %}
+            <div class="nav-menu">
+                <a href="{{ url_for('chat') }}" class="nav-link">
+                    <i class="fas fa-comment-dots"></i>
+                    Чат
+                </a>
+                <a href="{{ url_for('channels') }}" class="nav-link">
+                    <i class="fas fa-hashtag"></i>
+                    Каналы
+                </a>
+                <a href="{{ url_for('profile') }}" class="nav-link">
+                    <i class="fas fa-user"></i>
+                    Профиль
+                </a>
+                <a href="{{ url_for('settings') }}" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    Настройки
+                </a>
+                <a href="{{ url_for('help') }}" class="nav-link">
+                    <i class="fas fa-question-circle"></i>
+                    Помощь
+                </a>
+                <a href="{{ url_for('rules_page') }}" class="nav-link">
+                    <i class="fas fa-gavel"></i>
+                    Правила
+                </a>
+                {% if current_user.is_admin %}
+                <a href="{{ url_for('admin_panel') }}" class="nav-link">
+                    <i class="fas fa-shield-alt"></i>
+                    Админ
+                </a>
+                {% endif %}
+                <a href="{{ url_for('logout') }}" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Выйти
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for message in messages %}
+                        <div class="flash-message">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Глобальные функции для работы с профилями пользователей -->
+    <script>
+        function viewUserProfile(username) {
+            if (username && username !== '{{ current_user.username if current_user.is_authenticated else "" }}') {
+                window.open(`/profile/${username}`, '_blank');
+            }
+        }
+        
+        // Функция для добавления кликабельности к аватарам
+        function makeAvatarClickable(avatarElement, username) {
+            if (avatarElement && username) {
+                avatarElement.style.cursor = 'pointer';
+                avatarElement.title = `Посмотреть профиль ${username}`;
+                avatarElement.onclick = function() {
+                    viewUserProfile(username);
+                };
+            }
+        }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,26 @@
+# Переменные окружения для Nexa Messenger
+# Скопируйте этот файл в .env и настройте значения
+
+FLASK_ENV=production
+SECRET_KEY=nexa-messenger-super-secret-key-2024-production
+DATABASE_URL=sqlite:///nexa_messenger.db
+
+# Настройки безопасности
+SESSION_COOKIE_SECURE=false
+SESSION_COOKIE_HTTPONLY=true
+PERMANENT_SESSION_LIFETIME=2592000
+
+# Настройки для загрузки файлов
+MAX_CONTENT_LENGTH=16777216
+UPLOAD_FOLDER=static/uploads
+
+# Настройки WebSocket
+SOCKETIO_ASYNC_MODE=threading
+SOCKETIO_CORS_ALLOWED_ORIGINS=*
+
+# Для PostgreSQL (в продакшене):
+# DATABASE_URL=postgresql://username:password@localhost/nexa_messenger
+
+# Для домена:
+# SESSION_COOKIE_DOMAIN=your-domain.com
+# SESSION_COOKIE_SECURE=true

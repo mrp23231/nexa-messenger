@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация - Nexa Messenger{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-box">
+        <div class="auth-header">
+            <div class="nexa-logo-small">
+                <div class="logo-icon-small">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h2>Nexa</h2>
+            </div>
+            <h1>Регистрация</h1>
+            <p>Создайте новый аккаунт в Nexa Messenger</p>
+        </div>
+        
+        <form method="POST" class="auth-form">
+            <div class="form-group">
+                <label for="username">Имя пользователя</label>
+                <input type="text" id="username" name="username" value="{{ original_username or '' }}" required>
+                {% if alternatives %}
+                <div class="username-suggestions">
+                    <small>Попробуйте эти варианты:</small>
+                    <div class="suggestion-chips">
+                        {% for alt in alternatives[:5] %}
+                        <button type="button" class="suggestion-chip" onclick="useUsername('{{ alt }}')">
+                            {{ alt }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" required>
+                <small>Минимум 6 символов</small>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-full">
+                <i class="fas fa-user-plus"></i>
+                Зарегистрироваться
+            </button>
+        </form>
+        
+        <script>
+            function useUsername(username) {
+                document.getElementById('username').value = username;
+                // Убираем предложения после выбора
+                const suggestions = document.querySelector('.username-suggestions');
+                if (suggestions) {
+                    suggestions.style.display = 'none';
+                }
+            }
+        </script>
+        
+        <div class="auth-footer">
+            <p>Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a></p>
+            <a href="{{ url_for('index') }}" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                Назад на главную
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

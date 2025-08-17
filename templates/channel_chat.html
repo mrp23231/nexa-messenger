@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}#{{ channel.name }} - Nexa Messenger{% endblock %}
+
+{% block content %}
+<div class="channel-chat-container">
+    <div class="channel-header">
+        <div class="channel-info">
+            <h1><i class="fas fa-hashtag"></i> {{ channel.name }}</h1>
+            <p class="channel-description">{{ channel.description or 'Описание отсутствует' }}</p>
+            <div class="channel-meta">
+                <span class="member-count">
+                    <i class="fas fa-users"></i> {{ channel.member_count }} участников
+                </span>
+                {% if channel.topic %}
+                <span class="channel-topic">
+                    <i class="fas fa-comment"></i> {{ channel.topic }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="channel-actions">
+            <a href="{{ url_for('channels') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> К каналам
+            </a>
+        </div>
+    </div>
+
+    <div class="channel-messages" id="channel-messages">
+        <div class="welcome-message">
+            <i class="fas fa-hashtag"></i>
+            <h3>Добро пожаловать в #{{ channel.name }}!</h3>
+            <p>Начните общение с участниками канала</p>
+        </div>
+    </div>
+
+    <div class="channel-input-container">
+        <form class="message-form" id="channel-message-form">
+            <div class="message-input-wrapper">
+                <input type="text" id="channel-message-input" placeholder="Написать сообщение в #{{ channel.name }}..." required>
+                <div class="message-actions">
+                    <button type="button" class="emoji-btn" onclick="toggleEmojiPicker()">
+                        <i class="fas fa-smile"></i>
+                    </button>
+                    <button type="button" class="reply-btn" onclick="cancelReply()" style="display: none;">
+                        <i class="fas fa-reply"></i> Отменить ответ
+                    </button>
+                </div>
+            </div>
+            <button type="submit" class="send-btn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </form>
+        <div id="reply-preview" style="display: none;">
+            <div class="reply-preview-content">
+                <span class="reply-label">Ответ на:</span>
+                <span class="reply-text" id="reply-text"></span>
+                <button type="button" onclick="cancelReply()" class="cancel-reply-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Эмодзи пикер -->
+    <div class="emoji-picker" id="emoji-picker" style="display: none;">
+        <div class="emoji-picker-header">
+            <span>Выберите эмодзи</span>
+            <button type="button" onclick="toggleEmojiPicker()" class="close-emoji-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="emoji-grid">
+            <button type="button" class="emoji-btn" onclick="addEmoji('😀')">😀</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('😃')">😃</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('😄')">😄</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('😁')">😁</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('😆')">😆</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('😅')">😅</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('😂')">😂</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('🤣')">🤣</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('❤️')">❤️</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('💙')">💙</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('💚')">💚</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('💛')">💛</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('💜')">💜</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('💖')">💖</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('👍')">👍</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('👎')">��</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('👏')">👏</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('🙌')">🙌</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('🎉')">🎉</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('��')">🔥</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('💯')">💯</button>
+            <button type="button" class="emoji-btn" onclick="addEmoji('✨')">✨</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentReplyTo = null;
+let socket = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация Socket.IO
+    socket = io();
+    
+    // Присоединяемся к каналу
+    socket.emit('join_channel', { channel_id: {{ channel.id }} });
+    
+    // Загружаем сообщения
+    loadChannelMessages();
+    
+    // Обработка формы
+    document.getElementById('channel-message-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        sendChannelMessage();
+    });
+    
+    // Socket.IO события
+    socket.on('new_message', function(data) {
+        if (data.channel_id === {{ channel.id }}) {
+            addMessageToChat(data);
+        }
+    });
+    
+    socket.on('user_joined_channel', function(data) {
+        showSystemMessage(`${data.display_name} присоединился к каналу`);
+    });
+    
+    socket.on('user_left_channel', function(data) {
+        showSystemMessage(`${data.display_name} покинул канал`);
+    });
+});
+
+function loadChannelMessages() {
+    fetch('/api/channel/{{ channel.id }}/messages')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'error') {
+                showError(data.message);
+                return;
+            }
+            
+            const messagesContainer = document.getElementById('channel-messages');
+            messagesContainer.innerHTML = '';
+            
+            data.forEach(message => {
+                addMessageToChat(message);
+            });
+            
+            // Прокручиваем к последнему сообщению
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        })
+        .catch(error => {
+            showError('Ошибка загрузки сообщений');
+        });
+}
+
+function sendChannelMessage() {
+    const input = document.getElementById('channel-message-input');
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    const messageData = {
+        content: content,
+        channel_id: {{ channel.id }}
+    };
+    
+    if (currentReplyTo) {
+        messageData.reply_to_id = currentReplyTo;
+    }
+    
+    socket.emit('send_message', messageData);
+    
+    // Очищаем поле ввода и ответ
+    input.value = '';
+    cancelReply();
+}
+
+function addMessageToChat(messageData) {
+    const messagesContainer = document.getElementById('channel-messages');
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${messageData.is_own ? 'own' : 'other'}`;
+    messageDiv.dataset.messageId = messageData.id;
+    
+    let replyHtml = '';
+    if (messageData.reply_to_id) {
+        replyHtml = `
+            <div class="message-reply">
+                <i class="fas fa-reply"></i>
+                <span>${messageData.reply_to_content || 'Ответ на сообщение'}</span>
+            </div>
+        `;
+    }
+    
+    let editedHtml = '';
+    if (messageData.is_edited) {
+        editedHtml = '<span class="edited-indicator">(изменено)</span>';
+    }
+    
+    messageDiv.innerHTML = `
+        <div class="message-content">
+            <div class="message-sender">${messageData.sender_name}</div>
+            ${replyHtml}
+            <div class="message-text">${messageData.content}</div>
+            <div class="message-footer">
+                <span class="message-time">${messageData.timestamp}</span>
+                ${editedHtml}
+            </div>
+            <div class="message-actions">
+                <button type="button" class="action-btn" onclick="replyToMessage(${messageData.id}, '${messageData.content}')">
+                    <i class="fas fa-reply"></i>
+                </button>
+                <button type="button" class="action-btn" onclick="showReactions(${messageData.id})">
+                    <i class="fas fa-smile"></i>
+                </button>
+                ${messageData.is_own ? `
+                    <button type="button" class="action-btn" onclick="editMessage(${messageData.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="action-btn" onclick="deleteMessage(${messageData.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function replyToMessage(messageId, content) {
+    currentReplyTo = messageId;
+    document.getElementById('reply-preview').style.display = 'block';
+    document.getElementById('reply-text').textContent = content.substring(0, 50) + (content.length > 50 ? '...' : '');
+    document.getElementById('channel-message-input').focus();
+}
+
+function cancelReply() {
+    currentReplyTo = null;
+    document.getElementById('reply-preview').style.display = 'none';
+}
+
+function showSystemMessage(text) {
+    const messagesContainer = document.getElementById('channel-messages');
+    const systemDiv = document.createElement('div');
+    systemDiv.className = 'system-message';
+    systemDiv.innerHTML = `<span>${text}</span>`;
+    messagesContainer.appendChild(systemDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function toggleEmojiPicker() {
+    const picker = document.getElementById('emoji-picker');
+    picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+}
+
+function addEmoji(emoji) {
+    const input = document.getElementById('channel-message-input');
+    input.value += emoji;
+    input.focus();
+    toggleEmojiPicker();
+}
+
+function editMessage(messageId) {
+    const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+    const messageText = messageDiv.querySelector('.message-text');
+    const currentText = messageText.textContent;
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentText;
+    input.className = 'edit-input';
+    
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Сохранить';
+    saveBtn.className = 'btn btn-primary btn-sm';
+    saveBtn.onclick = () => saveEditedMessage(messageId, input.value);
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Отмена';
+    cancelBtn.className = 'btn btn-secondary btn-sm';
+    cancelBtn.onclick = () => cancelEdit(messageDiv, currentText);
+    
+    messageText.innerHTML = '';
+    messageText.appendChild(input);
+    messageText.appendChild(saveBtn);
+    messageText.appendChild(cancelBtn);
+    
+    input.focus();
+}
+
+function saveEditedMessage(messageId, newContent) {
+    fetch(`/api/message/${messageId}/edit`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: newContent })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            loadChannelMessages(); // Перезагружаем сообщения
+        } else {
+            showError(data.message || 'Ошибка при редактировании');
+        }
+    })
+    .catch(error => {
+        showError('Ошибка сети при редактировании');
+    });
+}
+
+function cancelEdit(messageDiv, originalText) {
+    const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+    const messageText = messageDiv.querySelector('.message-text');
+    messageText.textContent = originalText;
+}
+
+function deleteMessage(messageId) {
+    if (confirm('Вы уверены, что хотите удалить это сообщение?')) {
+        fetch(`/api/message/${messageId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ delete_for_all: false })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (messageDiv) {
+                    messageDiv.remove();
+                }
+            } else {
+                showError(data.message || 'Ошибка при удалении');
+            }
+        })
+        .catch(error => {
+            showError('Ошибка сети при удалении');
+        });
+    }
+}
+
+function showReactions(messageId) {
+    // Показываем панель с реакциями
+    const reactions = ['👍', '❤️', '😄', '😮', '😢', '😡'];
+    const reactionsHtml = reactions.map(emoji => 
+        `<button type="button" class="reaction-btn" onclick="addReaction(${messageId}, '${emoji}')">${emoji}</button>`
+    ).join('');
+    
+    // Создаем или обновляем панель реакций
+    let reactionsPanel = document.getElementById('reactions-panel');
+    if (!reactionsPanel) {
+        reactionsPanel = document.createElement('div');
+        reactionsPanel.id = 'reactions-panel';
+        reactionsPanel.className = 'reactions-panel';
+        document.body.appendChild(reactionsPanel);
+    }
+    
+    reactionsPanel.innerHTML = reactionsHtml;
+    reactionsPanel.style.display = 'block';
+    
+    // Позиционируем панель
+    const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+    const rect = messageDiv.getBoundingClientRect();
+    reactionsPanel.style.left = rect.left + 'px';
+    reactionsPanel.style.top = (rect.top - 60) + 'px';
+    
+    // Скрываем панель через 3 секунды
+    setTimeout(() => {
+        reactionsPanel.style.display = 'none';
+    }, 3000);
+}
+
+function addReaction(messageId, emoji) {
+    fetch(`/api/message/${messageId}/react`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ emoji: emoji })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Обновляем отображение реакций
+            loadChannelMessages();
+        } else {
+            showError(data.message || 'Ошибка при добавлении реакции');
+        }
+    })
+    .catch(error => {
+        showError('Ошибка сети при добавлении реакции');
+    });
+    
+    // Скрываем панель реакций
+    document.getElementById('reactions-panel').style.display = 'none';
+}
+</script>
+{% endblock %}

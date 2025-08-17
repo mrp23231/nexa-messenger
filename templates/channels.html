@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Каналы - Nexa Messenger{% endblock %}
+
+{% block content %}
+<div class="channels-container">
+    <div class="channels-header">
+        <h1><i class="fas fa-hashtag"></i> Публичные каналы</h1>
+        <p>Присоединяйтесь к каналам по интересам и общайтесь с единомышленниками</p>
+    </div>
+
+    <div class="channels-grid">
+        {% for channel in public_channels %}
+        <div class="channel-card" data-channel-id="{{ channel.id }}">
+            <div class="channel-header">
+                <div class="channel-icon">
+                    <i class="fas fa-hashtag"></i>
+                </div>
+                <div class="channel-info">
+                    <h3>{{ channel.name }}</h3>
+                    <p class="channel-description">{{ channel.description or 'Описание отсутствует' }}</p>
+                    <div class="channel-meta">
+                        <span class="member-count">
+                            <i class="fas fa-users"></i> {{ channel.member_count }} участников
+                        </span>
+                        {% if channel.topic %}
+                        <span class="channel-topic">
+                            <i class="fas fa-comment"></i> {{ channel.topic }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="channel-actions">
+                <button class="btn btn-primary join-channel-btn" onclick="joinChannel({{ channel.id }})">
+                    <i class="fas fa-sign-in-alt"></i> Присоединиться
+                </button>
+                <a href="{{ url_for('channel_chat', channel_id=channel.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-eye"></i> Посмотреть
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if user_channels %}
+    <div class="my-channels-section">
+        <h2><i class="fas fa-star"></i> Мои каналы</h2>
+        <div class="channels-grid">
+            {% for member in user_channels %}
+            <div class="channel-card my-channel" data-channel-id="{{ member.channel.id }}">
+                <div class="channel-header">
+                    <div class="channel-icon">
+                        <i class="fas fa-hashtag"></i>
+                    </div>
+                    <div class="channel-info">
+                        <h3>{{ member.channel.name }}</h3>
+                        <p class="channel-description">{{ member.channel.description or 'Описание отсутствует' }}</p>
+                        <div class="channel-meta">
+                            <span class="member-count">
+                                <i class="fas fa-users"></i> {{ member.channel.member_count }} участников
+                            </span>
+                            <span class="channel-role">
+                                <i class="fas fa-crown"></i> {{ member.role|title }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="channel-actions">
+                    <a href="{{ url_for('channel_chat', channel_id=member.channel.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-comments"></i> Открыть чат
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="create-channel-section">
+        <h2><i class="fas fa-plus-circle"></i> Создать новый канал</h2>
+        <div class="create-channel-form">
+            <div class="form-group">
+                <label for="channel-name">Название канала</label>
+                <input type="text" id="channel-name" placeholder="Введите название канала" required>
+            </div>
+            <div class="form-group">
+                <label for="channel-description">Описание</label>
+                <textarea id="channel-description" placeholder="Опишите тематику канала" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="channel-topic">Тема</label>
+                <input type="text" id="channel-topic" placeholder="Краткая тема для обсуждения">
+            </div>
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="channel-public" checked>
+                    <span class="checkmark"></span>
+                    Публичный канал
+                </label>
+            </div>
+            <button class="btn btn-primary" onclick="createChannel()">
+                <i class="fas fa-plus"></i> Создать канал
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function joinChannel(channelId) {
+    fetch(`/api/channel/${channelId}/join`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showSuccess('Вы успешно присоединились к каналу!');
+            // Обновляем UI
+            const channelCard = document.querySelector(`[data-channel-id="${channelId}"]`);
+            if (channelCard) {
+                channelCard.classList.add('joined');
+                const joinBtn = channelCard.querySelector('.join-channel-btn');
+                joinBtn.innerHTML = '<i class="fas fa-check"></i> Присоединились';
+                joinBtn.disabled = true;
+            }
+        } else {
+            showError(data.message || 'Ошибка при присоединении к каналу');
+        }
+    })
+    .catch(error => {
+        showError('Ошибка сети при присоединении к каналу');
+    });
+}
+
+function createChannel() {
+    const name = document.getElementById('channel-name').value.trim();
+    const description = document.getElementById('channel-description').value.trim();
+    const topic = document.getElementById('channel-topic').value.trim();
+    const isPublic = document.getElementById('channel-public').checked;
+
+    if (!name) {
+        showError('Введите название канала');
+        return;
+    }
+
+    fetch('/api/channels', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: name,
+            description: description,
+            topic: topic,
+            is_public: isPublic
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showSuccess('Канал успешно создан!');
+            // Перезагружаем страницу для отображения нового канала
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showError(data.message || 'Ошибка при создании канала');
+        }
+    })
+    .catch(error => {
+        showError('Ошибка сети при создании канала');
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - Онлайн Мессенджер{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <div class="hero-text">
+            <div class="nexa-logo">
+                <div class="logo-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h1 class="nexa-title">Nexa</h1>
+                <p class="nexa-tagline">Современный мессенджер для общения</p>
+            </div>
+            <p>Общайтесь с друзьями в реальном времени, создавайте профили и делитесь моментами. Nexa - это не просто мессенджер, это новый способ общения.</p>
+            
+            <!-- Информация о безопасности -->
+            <div class="security-highlights">
+                <div class="security-item">
+                    <i class="fas fa-lock"></i>
+                    <span>End-to-End Шифрование</span>
+                </div>
+                <div class="security-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>100% Приватность</span>
+                </div>
+                <div class="security-item">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>Работает везде</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="auth-actions">
+            <div class="action-buttons">
+                <a href="{{ url_for('login') }}" class="btn btn-primary btn-large">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Войти в систему
+                </a>
+                <a href="{{ url_for('register') }}" class="btn btn-secondary btn-large">
+                    <i class="fas fa-user-plus"></i>
+                    Создать аккаунт
+                </a>
+            </div>
+            <p class="auth-note">Выберите действие для продолжения</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -509,7 +509,6 @@ class SocialNetworkHandler(BaseHTTPRequestHandler):
             self.wfile.write(profile_html.encode('utf-8'))
         
         elif path == '/logout':
-            global current_user
             current_user = None
             self.send_response(302)
             self.send_header('Location', '/')
@@ -601,7 +600,6 @@ class SocialNetworkHandler(BaseHTTPRequestHandler):
                 response_html = LOGIN_HTML + '<div class="error">Enter username and password!</div>'
             elif username in users and users[username]['password'] == password:
                 # Login successful
-                global current_user
                 current_user = users[username]
                 self.send_response(302)
                 self.send_header('Location', '/')

@@ -1573,4 +1573,14 @@ def handle_typing_stop(data):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    socketio.run(app, debug=True, host='0.0.0.0', port=8080)
+    
+    # Получаем порт из переменной окружения (для Render) или используем 8080
+    port = int(os.environ.get('PORT', 8080))
+    
+    # Проверяем, запускаем ли мы в продакшене
+    if os.environ.get('FLASK_ENV') == 'production':
+        # В продакшене используем простой запуск без debug
+        socketio.run(app, host='0.0.0.0', port=port, debug=False)
+    else:
+        # В разработке используем debug режим
+        socketio.run(app, host='0.0.0.0', port=port, debug=True)

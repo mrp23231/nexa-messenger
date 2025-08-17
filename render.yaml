@@ -4,7 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --worker-class eventlet --workers 1 --log-file=- --access-logfile=-
+    startCommand: python app.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.18
@@ -15,10 +15,4 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        value: "postgresql://nexamessenger:password@localhost:5432/nexamessenger"
-
-databases:
-  - name: nexa-messenger-db
-    databaseName: nexamessenger
-    user: nexamessenger
-    plan: free
+        value: "sqlite:///nexa_messenger.db"

@@ -18,10 +18,14 @@ users = {}
 posts = []
 messages = []
 friendships = []
+notifications = []
+groups = []
 user_id_counter = 1
 post_id_counter = 1
 message_id_counter = 1
 friendship_id_counter = 1
+notification_id_counter = 1
+group_id_counter = 1
 current_user = None
 
 # HTML Templates
@@ -153,28 +157,365 @@ class NexaSocialHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 return
             
-            # Simple home page for now
+            # Get user's posts and friends
+            user_posts = [p for p in posts if p['user_id'] == current_user['id']]
+            user_friends = [f for f in friendships if f['user1_id'] == current_user['id'] or f['user2_id'] == current_user['id']]
+            
+            # Generate posts HTML
+            posts_html = ''
+            for post in user_posts:
+                posts_html += f'''
+                <div class="post">
+                    <div class="post-header">
+                        <div class="post-avatar">{current_user['display_name'][0].upper()}</div>
+                        <div class="post-info">
+                            <h4>{current_user['display_name']}</h4>
+                            <small>{post['timestamp']}</small>
+                        </div>
+                    </div>
+                    <div class="post-content">{post['content']}</div>
+                    <div class="post-actions">
+                        <a href="#" class="post-action" onclick="likePost({post['id']})">👍 Like ({post.get('likes', 0)})</a>
+                        <a href="#" class="post-action" onclick="commentPost({post['id']})">💬 Comment</a>
+                        <a href="#" class="post-action" onclick="sharePost({post['id']})">📤 Share</a>
+                    </div>
+                </div>
+                '''
+            
+            # Generate friends HTML
+            friends_html = ''
+            for friendship in user_friends:
+                friend_id = friendship['user2_id'] if friendship['user1_id'] == current_user['id'] else friendship['user1_id']
+                friend = users.get(friend_id)
+                if friend:
+                    friends_html += f'''
+                    <div class="friend-item">
+                        <div class="friend-avatar">{friend['display_name'][0].upper()}</div>
+                        <div class="friend-info">
+                            <h4>{friend['display_name']}</h4>
+                            <small>@{friend['username']}</small>
+                        </div>
+                    </div>
+                    '''
+            
             home_html = f'''
             <!DOCTYPE html>
             <html>
             <head>
                 <title>Nexa Social Network - Home</title>
                 <style>
-                    body {{ font-family: Arial, sans-serif; margin: 40px; }}
-                    .header {{ background: #667eea; color: white; padding: 20px; border-radius: 10px; }}
-                    .content {{ margin-top: 20px; }}
+                    * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                    body {{ 
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        background: #f0f2f5;
+                        color: #333;
+                    }}
+                    .header {{
+                        background: white;
+                        border-bottom: 1px solid #e1e5e9;
+                        position: sticky;
+                        top: 0;
+                        z-index: 100;
+                    }}
+                    .header-content {{
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        padding: 0 20px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        height: 60px;
+                    }}
+                    .logo {{
+                        font-size: 24px;
+                        font-weight: bold;
+                        color: #667eea;
+                    }}
+                    .nav {{
+                        display: flex;
+                        gap: 30px;
+                    }}
+                    .nav a {{
+                        color: #666;
+                        text-decoration: none;
+                        font-weight: 500;
+                        transition: color 0.3s;
+                    }}
+                    .nav a:hover, .nav a.active {{
+                        color: #667eea;
+                    }}
+                    .user-menu {{
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                    }}
+                    .user-avatar {{
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        background: #667eea;
+                        color: white;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: bold;
+                        font-size: 18px;
+                    }}
+                    .logout-btn {{
+                        color: #666;
+                        text-decoration: none;
+                        font-weight: 500;
+                        transition: color 0.3s;
+                    }}
+                    .logout-btn:hover {{
+                        color: #c33;
+                    }}
+                    
+                    .main-content {{
+                        max-width: 1200px;
+                        margin: 20px auto;
+                        padding: 0 20px;
+                        display: grid;
+                        grid-template-columns: 1fr 2fr 1fr;
+                        gap: 20px;
+                    }}
+                    
+                    .sidebar {{
+                        background: white;
+                        border-radius: 15px;
+                        padding: 20px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        height: fit-content;
+                    }}
+                    .sidebar h3 {{
+                        margin-bottom: 20px;
+                        color: #333;
+                        font-size: 18px;
+                    }}
+                    
+                    .feed {{
+                        background: white;
+                        border-radius: 15px;
+                        padding: 20px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }}
+                    
+                    .create-post {{
+                        background: white;
+                        border-radius: 15px;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }}
+                    .create-post textarea {{
+                        width: 100%;
+                        padding: 15px;
+                        border: 2px solid #e1e5e9;
+                        border-radius: 10px;
+                        font-size: 16px;
+                        resize: vertical;
+                        min-height: 100px;
+                        font-family: inherit;
+                        margin-bottom: 15px;
+                    }}
+                    .create-post textarea:focus {{
+                        outline: none;
+                        border-color: #667eea;
+                    }}
+                    .post-btn {{
+                        background: #667eea;
+                        color: white;
+                        border: none;
+                        padding: 12px 24px;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: background 0.3s;
+                    }}
+                    .post-btn:hover {{
+                        background: #5a6fd8;
+                    }}
+                    
+                    .post {{
+                        background: white;
+                        border-radius: 15px;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }}
+                    .post-header {{
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                        margin-bottom: 15px;
+                    }}
+                    .post-avatar {{
+                        width: 50px;
+                        height: 50px;
+                        border-radius: 50%;
+                        background: #667eea;
+                        color: white;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: bold;
+                        font-size: 20px;
+                    }}
+                    .post-info h4 {{
+                        margin: 0;
+                        color: #333;
+                        font-size: 16px;
+                    }}
+                    .post-info small {{
+                        color: #666;
+                        font-size: 14px;
+                    }}
+                    .post-content {{
+                        color: #333;
+                        line-height: 1.6;
+                        margin-bottom: 20px;
+                        font-size: 16px;
+                    }}
+                    .post-actions {{
+                        display: flex;
+                        gap: 20px;
+                        border-top: 1px solid #eee;
+                        padding-top: 15px;
+                    }}
+                    .post-action {{
+                        color: #666;
+                        text-decoration: none;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 500;
+                        transition: color 0.3s;
+                        cursor: pointer;
+                    }}
+                    .post-action:hover {{
+                        color: #667eea;
+                    }}
+                    
+                    .friend-item {{
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                        padding: 15px 0;
+                        border-bottom: 1px solid #eee;
+                    }}
+                    .friend-item:last-child {{
+                        border-bottom: none;
+                    }}
+                    .friend-avatar {{
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        background: #667eea;
+                        color: white;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: bold;
+                    }}
+                    .friend-info h4 {{
+                        margin: 0;
+                        color: #333;
+                        font-size: 16px;
+                    }}
+                    .friend-info small {{
+                        color: #666;
+                        font-size: 14px;
+                    }}
+                    
+                    @media (max-width: 768px) {{
+                        .main-content {{
+                            grid-template-columns: 1fr;
+                        }}
+                        .nav {{
+                            display: none;
+                        }}
+                    }}
                 </style>
             </head>
             <body>
                 <div class="header">
-                    <h1>💬 Welcome to Nexa Social Network!</h1>
-                    <p>Hello, {current_user['display_name']}!</p>
+                    <div class="header-content">
+                        <div class="logo">💬 Nexa</div>
+                        <div class="nav">
+                            <a href="/" class="active">Home</a>
+                            <a href="/profile">Profile</a>
+                            <a href="/friends">Friends</a>
+                            <a href="/messages">Messages</a>
+                        </div>
+                        <div class="user-menu">
+                            <div class="user-avatar">{current_user['display_name'][0].upper()}</div>
+                            <span>{current_user['display_name']}</span>
+                            <a href="/logout" class="logout-btn">Logout</a>
+                        </div>
+                    </div>
                 </div>
-                <div class="content">
-                    <h2>Your Social Network is Ready!</h2>
-                    <p>This is a completely new social network built from scratch.</p>
-                    <p><a href="/logout">Logout</a></p>
+                
+                <div class="main-content">
+                    <div class="sidebar">
+                        <h3>Friends</h3>
+                        {friends_html}
+                    </div>
+                    
+                    <div class="feed">
+                        <div class="create-post">
+                            <h3>Create Post</h3>
+                            <textarea id="postContent" placeholder="What's on your mind?"></textarea>
+                            <button class="post-btn" onclick="createPost()">Post</button>
+                        </div>
+                        
+                        <div class="posts">
+                            {posts_html}
+                        </div>
+                    </div>
+                    
+                    <div class="sidebar">
+                        <h3>Trending</h3>
+                        <p style="color: #666; font-size: 14px;">Popular topics and hashtags will appear here</p>
+                    </div>
                 </div>
+                
+                <script>
+                    function createPost() {{
+                        const content = document.getElementById('postContent').value;
+                        if (!content.trim()) return;
+                        
+                        fetch('/api/create_post', {{
+                            method: 'POST',
+                            headers: {{
+                                'Content-Type': 'application/json',
+                            }},
+                            body: JSON.stringify({{ content: content }})
+                        }})
+                        .then(response => response.json())
+                        .then(data => {{
+                            if (data.success) {{
+                                location.reload();
+                            }}
+                        }});
+                    }}
+                    
+                    function likePost(postId) {{
+                        fetch('/api/like_post', {{
+                            method: 'POST',
+                            headers: {{
+                                'Content-Type': 'application/json',
+                            }},
+                            body: JSON.stringify({{ post_id: postId }})
+                        }})
+                        .then(response => response.json())
+                        .then(data => {{
+                            if (data.success) {{
+                                location.reload();
+                            }}
+                        }});
+                    }}
+                </script>
             </body>
             </html>
             '''
@@ -230,6 +571,355 @@ class NexaSocialHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'text/html; charset=utf-8')
             self.end_headers()
             self.wfile.write(register_html.encode('utf-8'))
+        
+        elif path == '/profile':
+            if not current_user:
+                self.send_response(302)
+                self.send_header('Location', '/login')
+                self.end_headers()
+                return
+            
+            # Get user's posts
+            user_posts = [p for p in posts if p['user_id'] == current_user['id']]
+            
+            # Generate posts HTML
+            posts_html = ''
+            for post in user_posts:
+                posts_html += f'''
+                <div class="post">
+                    <div class="post-header">
+                        <div class="post-avatar">{current_user['display_name'][0].upper()}</div>
+                        <div class="post-info">
+                            <h4>{current_user['display_name']}</h4>
+                            <small>{post['timestamp']}</small>
+                        </div>
+                    </div>
+                    <div class="post-content">{post['content']}</div>
+                    <div class="post-actions">
+                        <a href="#" class="post-action" onclick="likePost({post['id']})">👍 Like ({post.get('likes', 0)})</a>
+                        <a href="#" class="post-action" onclick="commentPost({post['id']})">💬 Comment</a>
+                        <a href="#" class="post-action" onclick="sharePost({post['id']})">📤 Share</a>
+                    </div>
+                </div>
+                '''
+            
+            profile_html = f'''
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Nexa Social Network - Profile</title>
+                <style>
+                    * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                    body {{ 
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        background: #f0f2f5;
+                        color: #333;
+                    }}
+                    .header {{
+                        background: white;
+                        border-bottom: 1px solid #e1e5e9;
+                        position: sticky;
+                        top: 0;
+                        z-index: 100;
+                    }}
+                    .header-content {{
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        padding: 0 20px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        height: 60px;
+                    }}
+                    .logo {{
+                        font-size: 24px;
+                        font-weight: bold;
+                        color: #667eea;
+                    }}
+                    .nav {{
+                        display: flex;
+                        gap: 30px;
+                    }}
+                    .nav a {{
+                        color: #666;
+                        text-decoration: none;
+                        font-weight: 500;
+                        transition: color 0.3s;
+                    }}
+                    .nav a:hover, .nav a.active {{
+                        color: #667eea;
+                    }}
+                    .user-menu {{
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                    }}
+                    .user-avatar {{
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        background: #667eea;
+                        color: white;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: bold;
+                        font-size: 18px;
+                    }}
+                    .logout-btn {{
+                        color: #666;
+                        text-decoration: none;
+                        font-weight: 500;
+                        transition: color 0.3s;
+                    }}
+                    .logout-btn:hover {{
+                        color: #c33;
+                    }}
+                    
+                    .profile-header {{
+                        background: white;
+                        margin-bottom: 20px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }}
+                    .cover-photo {{
+                        height: 200px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-radius: 0 0 20px 20px;
+                    }}
+                    .profile-info {{
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        padding: 0 20px;
+                        display: flex;
+                        align-items: flex-end;
+                        gap: 30px;
+                        margin-top: -60px;
+                        margin-bottom: 30px;
+                    }}
+                    .profile-avatar {{
+                        width: 120px;
+                        height: 120px;
+                        border-radius: 50%;
+                        background: #667eea;
+                        color: white;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: bold;
+                        font-size: 48px;
+                        border: 5px solid white;
+                        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                    }}
+                    .profile-details h1 {{
+                        margin: 0;
+                        color: #333;
+                        font-size: 32px;
+                        margin-bottom: 10px;
+                    }}
+                    .profile-details p {{
+                        margin: 0;
+                        color: #666;
+                        font-size: 18px;
+                        margin-bottom: 5px;
+                    }}
+                    .profile-actions {{
+                        margin-left: auto;
+                    }}
+                    .edit-btn {{
+                        background: #667eea;
+                        color: white;
+                        text-decoration: none;
+                        padding: 12px 24px;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        transition: background 0.3s;
+                    }}
+                    .edit-btn:hover {{
+                        background: #5a6fd8;
+                    }}
+                    
+                    .profile-content {{
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        padding: 0 20px;
+                        display: grid;
+                        grid-template-columns: 1fr 2fr;
+                        gap: 20px;
+                    }}
+                    
+                    .profile-sidebar {{
+                        background: white;
+                        border-radius: 15px;
+                        padding: 20px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        height: fit-content;
+                    }}
+                    .profile-sidebar h3 {{
+                        margin-bottom: 20px;
+                        color: #333;
+                        font-size: 18px;
+                    }}
+                    .profile-sidebar-item {{
+                        padding: 15px 0;
+                        border-bottom: 1px solid #eee;
+                    }}
+                    .profile-sidebar-item:last-child {{
+                        border-bottom: none;
+                    }}
+                    .profile-sidebar-item strong {{
+                        color: #333;
+                    }}
+                    
+                    .profile-posts {{
+                        background: white;
+                        border-radius: 15px;
+                        padding: 20px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }}
+                    .profile-posts h3 {{
+                        margin-bottom: 20px;
+                        color: #333;
+                        font-size: 18px;
+                    }}
+                    
+                    .post {{
+                        border: 1px solid #e1e5e9;
+                        border-radius: 15px;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                    }}
+                    .post-header {{
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                        margin-bottom: 15px;
+                    }}
+                    .post-avatar {{
+                        width: 50px;
+                        height: 50px;
+                        border-radius: 50%;
+                        background: #667eea;
+                        color: white;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: bold;
+                        font-size: 20px;
+                    }}
+                    .post-info h4 {{
+                        margin: 0;
+                        color: #333;
+                        font-size: 16px;
+                    }}
+                    .post-info small {{
+                        color: #666;
+                        font-size: 14px;
+                    }}
+                    .post-content {{
+                        color: #333;
+                        line-height: 1.6;
+                        margin-bottom: 15px;
+                        font-size: 16px;
+                    }}
+                    .post-actions {{
+                        display: flex;
+                        gap: 20px;
+                        border-top: 1px solid #eee;
+                        padding-top: 15px;
+                    }}
+                    .post-action {{
+                        color: #666;
+                        text-decoration: none;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 500;
+                        transition: color 0.3s;
+                        cursor: pointer;
+                    }}
+                    .post-action:hover {{
+                        color: #667eea;
+                    }}
+                    
+                    @media (max-width: 768px) {{
+                        .profile-content {{
+                            grid-template-columns: 1fr;
+                        }}
+                        .profile-info {{
+                            flex-direction: column;
+                            align-items: center;
+                            text-align: center;
+                        }}
+                        .profile-actions {{
+                            margin-left: 0;
+                            margin-top: 20px;
+                        }}
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="header-content">
+                        <div class="logo">💬 Nexa</div>
+                        <div class="nav">
+                            <a href="/">Home</a>
+                            <a href="/profile" class="active">Profile</a>
+                            <a href="/friends">Friends</a>
+                            <a href="/messages">Messages</a>
+                        </div>
+                        <div class="user-menu">
+                            <div class="user-avatar">{current_user['display_name'][0].upper()}</div>
+                            <span>{current_user['display_name']}</span>
+                            <a href="/logout" class="logout-btn">Logout</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="profile-header">
+                    <div class="cover-photo"></div>
+                    <div class="profile-info">
+                        <div class="profile-avatar">{current_user['display_name'][0].upper()}</div>
+                        <div class="profile-details">
+                            <h1>{current_user['display_name']}</h1>
+                            <p>@{current_user['username']}</p>
+                            <p>Member since {current_user['created_at']}</p>
+                        </div>
+                        <div class="profile-actions">
+                            <a href="/edit_profile" class="edit-btn">Edit Profile</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="profile-content">
+                    <div class="profile-sidebar">
+                        <h3>Profile Info</h3>
+                        <div class="profile-sidebar-item">
+                            <strong>Username:</strong> @{current_user['username']}
+                        </div>
+                        <div class="profile-sidebar-item">
+                            <strong>Email:</strong> {current_user['email']}
+                        </div>
+                        <div class="profile-sidebar-item">
+                            <strong>Member since:</strong> {current_user['created_at']}
+                        </div>
+                        <div class="profile-sidebar-item">
+                            <strong>Posts:</strong> {len(user_posts)}
+                        </div>
+                    </div>
+                    
+                    <div class="profile-posts">
+                        <h3>My Posts</h3>
+                        {posts_html}
+                    </div>
+                </div>
+            </body>
+            </html>
+            '''
+            
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(profile_html.encode('utf-8'))
         
         elif path == '/logout':
             current_user = None
@@ -307,6 +997,85 @@ class NexaSocialHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(response_html.encode('utf-8'))
         
+        elif path == '/api/create_post':
+            if not current_user:
+                self.send_response(401)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'Not authorized'}).encode('utf-8'))
+                return
+            
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            
+            try:
+                data = json.loads(post_data)
+                content = data.get('content', '').strip()
+                
+                if not content:
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': 'Post content is required'}).encode('utf-8'))
+                    return
+                
+                # Create post
+                post = {
+                    'id': post_id_counter,
+                    'user_id': current_user['id'],
+                    'content': content,
+                    'timestamp': datetime.now().strftime('%B %d, %Y at %I:%M %p'),
+                    'likes': 0,
+                    'comments': [],
+                    'shares': 0
+                }
+                
+                posts.append(post)
+                post_id_counter += 1
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': True, 'post_id': post['id']}).encode('utf-8'))
+                
+            except json.JSONDecodeError:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'Invalid JSON'}).encode('utf-8'))
+        
+        elif path == '/api/like_post':
+            if not current_user:
+                self.send_response(401)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'Not authorized'}).encode('utf-8'))
+                return
+            
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            
+            try:
+                data = json.loads(post_data)
+                post_id = data.get('post_id')
+                
+                # Find and like post
+                for post in posts:
+                    if post['id'] == post_id:
+                        post['likes'] = post.get('likes', 0) + 1
+                        break
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': True}).encode('utf-8'))
+                
+            except json.JSONDecodeError:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'Invalid JSON'}).encode('utf-8'))
+        
         else:
             self.send_response(404)
             self.send_header('Content-type', 'text/html')
@@ -314,7 +1083,7 @@ class NexaSocialHandler(BaseHTTPRequestHandler):
             self.wfile.write('<h1>404 - Page Not Found</h1>'.encode('utf-8'))
 
 def run_server():
-    global users, user_id_counter
+    global users, posts, user_id_counter, post_id_counter
     
     # Create test user
     users['admin'] = {
@@ -326,6 +1095,18 @@ def run_server():
         'created_at': 'December 2024'
     }
     user_id_counter += 1
+    
+    # Create test post
+    posts.append({
+        'id': post_id_counter,
+        'user_id': 1,
+        'content': 'Welcome to Nexa Social Network! This is your first post. Share your thoughts with the world! 🌟',
+        'timestamp': 'December 15, 2024 at 12:00 PM',
+        'likes': 5,
+        'comments': [],
+        'shares': 2
+    })
+    post_id_counter += 1
     
     port = int(os.environ.get('PORT', 8080))
     print(f"🚀 Starting Nexa Social Network on port {port}...")

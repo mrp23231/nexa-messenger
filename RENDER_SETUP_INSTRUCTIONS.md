@@ -18,7 +18,7 @@
 
 ### **Build & Deploy:**
 - **Build Command:** `pip install -r requirements.minimal.txt` ⭐ **ВАЖНО!**
-- **Start Command:** `python app.py` ⭐ **ВАЖНО!**
+- **Start Command:** `python app_simple.py` ⭐ **ВАЖНО!** (упрощенная версия без WebSocket)
 
 ## 🔧 Шаг 3: Переменные окружения
 

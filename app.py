@@ -1571,16 +1571,33 @@ def handle_typing_stop(data):
     }, broadcast=True)
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    
-    # Получаем порт из переменной окружения (для Render) или используем 8080
-    port = int(os.environ.get('PORT', 8080))
-    
-    # Проверяем, запускаем ли мы в продакшене
-    if os.environ.get('FLASK_ENV') == 'production':
-        # В продакшене используем простой запуск без debug
-        socketio.run(app, host='0.0.0.0', port=port, debug=False)
-    else:
-        # В разработке используем debug режим
-        socketio.run(app, host='0.0.0.0', port=port, debug=True)
+    try:
+        print("🚀 Запуск Nexa Messenger...")
+        print(f"📊 FLASK_ENV: {os.environ.get('FLASK_ENV', 'development')}")
+        print(f"🔧 FLASK_DEBUG: {os.environ.get('FLASK_DEBUG', '1')}")
+        print(f"🌐 PORT: {os.environ.get('PORT', '8080')}")
+        
+        with app.app_context():
+            print("📁 Создание базы данных...")
+            db.create_all()
+            print("✅ База данных готова")
+        
+        # Получаем порт из переменной окружения (для Render) или используем 8080
+        port = int(os.environ.get('PORT', 8080))
+        print(f"🚪 Запуск на порту: {port}")
+        
+        # Проверяем, запускаем ли мы в продакшене
+        if os.environ.get('FLASK_ENV') == 'production':
+            print("🏭 Продакшен режим")
+            # В продакшене используем простой запуск без debug
+            socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
+        else:
+            print("🔬 Режим разработки")
+            # В разработке используем debug режим
+            socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
+            
+    except Exception as e:
+        print(f"❌ Ошибка запуска: {e}")
+        import traceback
+        traceback.print_exc()
+        exit(1)

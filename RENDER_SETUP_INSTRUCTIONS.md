@@ -17,7 +17,7 @@
 - **Root Directory:** оставьте пустым
 
 ### **Build & Deploy:**
-- **Build Command:** `pip install -r requirements.txt`
+- **Build Command:** `pip install -r requirements.minimal.txt` ⭐ **ВАЖНО!**
 - **Start Command:** `python app.py` ⭐ **ВАЖНО!**
 
 ## 🔧 Шаг 3: Переменные окружения

@@ -1,0 +1,11 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Flask-SocketIO
+Werkzeug
+python-socketio
+python-engineio
+gunicorn
+psycopg2-binary
+cryptography
+python-dotenv

@@ -1,1 +1,1 @@
-web: gunicorn app:app --bind 0.0.0.0:$PORT --worker-class eventlet --workers 1 --log-file=- --access-logfile=-
+web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --log-file=logs/gunicorn.log --access-logfile=logs/access.log

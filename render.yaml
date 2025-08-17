@@ -15,9 +15,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        fromDatabase:
-          name: nexa-messenger-db
-          property: connectionString
+        value: "postgresql://nexamessenger:password@localhost:5432/nexamessenger"
 
 databases:
   - name: nexa-messenger-db
